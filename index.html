@@ -1,0 +1,867 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Janson Song Maker</title>
+
+<style>
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    background: #09090d;
+    color: white;
+    font-family: Arial, sans-serif;
+}
+
+.app {
+    max-width: 1350px;
+    margin: auto;
+    padding: 25px;
+}
+
+.topbar {
+    background: #13131b;
+    border: 1px solid #292935;
+    padding: 18px;
+    border-radius: 18px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    flex-wrap: wrap;
+}
+
+.logo {
+    font-weight: 900;
+    font-size: 24px;
+    margin-right: auto;
+}
+
+.logo span {
+    color: #a855f7;
+}
+
+button, input {
+    font: inherit;
+}
+
+button {
+    border: 0;
+    border-radius: 10px;
+    padding: 11px 16px;
+    background: #292933;
+    color: white;
+    cursor: pointer;
+    transition: 0.15s;
+}
+
+button:hover {
+    background: #3b3b49;
+    transform: translateY(-1px);
+}
+
+.primary {
+    background: #7c3aed;
+}
+
+.primary:hover {
+    background: #9333ea;
+}
+
+.danger {
+    background: #c0262d;
+}
+
+.control {
+    background: #1b1b25;
+    padding: 10px 14px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.control input[type="number"] {
+    width: 70px;
+    background: #101017;
+    border: 1px solid #333341;
+    color: white;
+    padding: 7px;
+    border-radius: 7px;
+}
+
+.panel {
+    margin-top: 20px;
+    background: #13131b;
+    border: 1px solid #292935;
+    border-radius: 18px;
+    overflow: hidden;
+}
+
+.panel-title {
+    font-weight: 800;
+    padding: 16px 20px;
+    border-bottom: 1px solid #292935;
+}
+
+.timeline {
+    padding: 18px;
+    overflow-x: auto;
+}
+
+.track {
+    display: grid;
+    grid-template-columns: 130px repeat(16, 42px);
+    gap: 6px;
+    margin-bottom: 8px;
+    align-items: center;
+    min-width: 900px;
+}
+
+.track-name {
+    font-weight: bold;
+    padding: 10px;
+    border-radius: 8px;
+    background: #1b1b25;
+    border-left: 4px solid var(--track-color);
+}
+
+.step {
+    height: 42px;
+    border-radius: 7px;
+    background: #24242d;
+    border: 1px solid #33333f;
+    cursor: pointer;
+    position: relative;
+}
+
+.step:nth-child(5),
+.step:nth-child(9),
+.step:nth-child(13),
+.step:nth-child(17) {
+    border-left: 2px solid #656575;
+}
+
+.step:hover {
+    background: #343440;
+}
+
+.step.active {
+    background: var(--track-color);
+    border-color: var(--track-color);
+    box-shadow: 0 0 14px color-mix(in srgb, var(--track-color), transparent 40%);
+}
+
+.step.playing::after {
+    content: "";
+    position: absolute;
+    inset: 3px;
+    border: 2px solid white;
+    border-radius: 5px;
+}
+
+.mixer {
+    display: flex;
+    gap: 12px;
+    overflow-x: auto;
+    padding: 20px;
+}
+
+.channel {
+    min-width: 150px;
+    background: #1b1b25;
+    border-radius: 12px;
+    padding: 15px;
+    text-align: center;
+}
+
+.channel-name {
+    font-weight: 800;
+    margin-bottom: 15px;
+}
+
+.channel input[type="range"] {
+    width: 100%;
+}
+
+.keyboard-wrap {
+    padding: 20px;
+    overflow-x: auto;
+}
+
+.keyboard {
+    height: 170px;
+    width: 770px;
+    position: relative;
+    display: flex;
+    user-select: none;
+}
+
+.key.white {
+    width: 70px;
+    height: 165px;
+    background: #f4f4f4;
+    border: 1px solid #333;
+    color: #111;
+    border-radius: 0 0 8px 8px;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    padding-bottom: 12px;
+    cursor: pointer;
+}
+
+.key.white:active,
+.key.white.pressed {
+    background: #c4a7ff;
+}
+
+.key.black {
+    position: absolute;
+    width: 42px;
+    height: 100px;
+    background: #111;
+    border-radius: 0 0 6px 6px;
+    z-index: 2;
+    cursor: pointer;
+    border: 1px solid #333;
+}
+
+.key.black:active,
+.key.black.pressed {
+    background: #7c3aed;
+}
+
+.status {
+    margin-top: 15px;
+    color: #aaaabd;
+    font-size: 14px;
+}
+
+.recording {
+    background: #e11d48 !important;
+    animation: pulse 1s infinite;
+}
+
+@keyframes pulse {
+    50% {
+        opacity: .65;
+    }
+}
+
+@media(max-width:700px) {
+    .app {
+        padding: 12px;
+    }
+
+    .logo {
+        width: 100%;
+    }
+}
+</style>
+</head>
+
+<body>
+
+<div class="app">
+
+    <div class="topbar">
+        <div class="logo">JANSON <span>STUDIO</span></div>
+
+        <button class="primary" id="playBtn">▶ Play</button>
+        <button id="stopBtn">■ Stop</button>
+        <button id="recordBtn">● Record</button>
+
+        <div class="control">
+            BPM
+            <input id="bpm" type="number" value="120" min="40" max="240">
+        </div>
+
+        <button id="randomBtn">Randomize</button>
+        <button class="danger" id="clearBtn">Clear</button>
+    </div>
+
+    <div class="panel">
+        <div class="panel-title">SEQUENCER</div>
+        <div class="timeline" id="timeline"></div>
+    </div>
+
+    <div class="panel">
+        <div class="panel-title">MIXER</div>
+        <div class="mixer" id="mixer"></div>
+    </div>
+
+    <div class="panel">
+        <div class="panel-title">SYNTH KEYBOARD</div>
+
+        <div class="keyboard-wrap">
+            <div class="keyboard" id="keyboard"></div>
+
+            <div class="status">
+                Computer keyboard: A W S E D F T G Y H U J K
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<script>
+const AudioContextClass =
+    window.AudioContext || window.webkitAudioContext;
+
+let audioCtx;
+
+function initAudio() {
+    if (!audioCtx) {
+        audioCtx = new AudioContextClass();
+    }
+
+    if (audioCtx.state === "suspended") {
+        audioCtx.resume();
+    }
+}
+
+const master = {
+    gain: null,
+    destination: null
+};
+
+function setupMaster() {
+    initAudio();
+
+    if (master.gain) return;
+
+    master.gain = audioCtx.createGain();
+    master.gain.gain.value = 0.75;
+
+    master.destination = audioCtx.createMediaStreamDestination();
+
+    master.gain.connect(audioCtx.destination);
+    master.gain.connect(master.destination);
+}
+
+const tracks = [
+    {
+        name: "KICK",
+        color: "#ef4444",
+        type: "kick",
+        volume: .9
+    },
+    {
+        name: "SNARE",
+        color: "#3b82f6",
+        type: "snare",
+        volume: .65
+    },
+    {
+        name: "HI-HAT",
+        color: "#eab308",
+        type: "hat",
+        volume: .35
+    },
+    {
+        name: "BASS",
+        color: "#22c55e",
+        type: "bass",
+        volume: .55
+    },
+    {
+        name: "SYNTH",
+        color: "#a855f7",
+        type: "synth",
+        volume: .45
+    }
+];
+
+const pattern =
+    tracks.map(() => new Array(16).fill(false));
+
+const timeline = document.getElementById("timeline");
+const mixer = document.getElementById("mixer");
+
+function buildSequencer() {
+    timeline.innerHTML = "";
+
+    tracks.forEach((track, trackIndex) => {
+        const row = document.createElement("div");
+        row.className = "track";
+        row.style.setProperty("--track-color", track.color);
+
+        const name = document.createElement("div");
+        name.className = "track-name";
+        name.textContent = track.name;
+
+        row.appendChild(name);
+
+        for (let i = 0; i < 16; i++) {
+            const step = document.createElement("div");
+
+            step.className =
+                "step" + (pattern[trackIndex][i] ? " active" : "");
+
+            step.dataset.track = trackIndex;
+            step.dataset.step = i;
+
+            step.onclick = () => {
+                initAudio();
+
+                pattern[trackIndex][i] =
+                    !pattern[trackIndex][i];
+
+                step.classList.toggle("active");
+
+                if (pattern[trackIndex][i]) {
+                    playTrack(trackIndex);
+                }
+            };
+
+            row.appendChild(step);
+        }
+
+        timeline.appendChild(row);
+    });
+}
+
+function buildMixer() {
+    mixer.innerHTML = "";
+
+    tracks.forEach((track, i) => {
+        const channel = document.createElement("div");
+        channel.className = "channel";
+
+        channel.innerHTML = `
+            <div
+                class="channel-name"
+                style="color:${track.color}">
+                ${track.name}
+            </div>
+
+            <input
+                type="range"
+                min="0"
+                max="1"
+                step="0.01"
+                value="${track.volume}">
+        `;
+
+        channel.querySelector("input").oninput = e => {
+            tracks[i].volume = Number(e.target.value);
+        };
+
+        mixer.appendChild(channel);
+    });
+}
+
+function createOscillator(
+    frequency,
+    duration,
+    volume,
+    type = "sine"
+) {
+    setupMaster();
+
+    const now = audioCtx.currentTime;
+
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+
+    osc.type = type;
+    osc.frequency.value = frequency;
+
+    gain.gain.setValueAtTime(volume, now);
+
+    gain.gain.exponentialRampToValueAtTime(
+        0.001,
+        now + duration
+    );
+
+    osc.connect(gain);
+    gain.connect(master.gain);
+
+    osc.start(now);
+    osc.stop(now + duration);
+}
+
+function playKick(volume) {
+    setupMaster();
+
+    const now = audioCtx.currentTime;
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+
+    osc.frequency.setValueAtTime(150, now);
+
+    osc.frequency.exponentialRampToValueAtTime(
+        40,
+        now + .16
+    );
+
+    gain.gain.setValueAtTime(volume, now);
+
+    gain.gain.exponentialRampToValueAtTime(
+        .001,
+        now + .3
+    );
+
+    osc.connect(gain);
+    gain.connect(master.gain);
+
+    osc.start();
+    osc.stop(now + .3);
+}
+
+function noiseBuffer() {
+    const buffer = audioCtx.createBuffer(
+        1,
+        audioCtx.sampleRate,
+        audioCtx.sampleRate
+    );
+
+    const data = buffer.getChannelData(0);
+
+    for (let i = 0; i < data.length; i++) {
+        data[i] = Math.random() * 2 - 1;
+    }
+
+    return buffer;
+}
+
+function playNoise(volume, duration, highpass) {
+    setupMaster();
+
+    const now = audioCtx.currentTime;
+
+    const source = audioCtx.createBufferSource();
+    const gain = audioCtx.createGain();
+    const filter = audioCtx.createBiquadFilter();
+
+    source.buffer = noiseBuffer();
+
+    filter.type = "highpass";
+    filter.frequency.value = highpass;
+
+    gain.gain.setValueAtTime(volume, now);
+
+    gain.gain.exponentialRampToValueAtTime(
+        .001,
+        now + duration
+    );
+
+    source.connect(filter);
+    filter.connect(gain);
+    gain.connect(master.gain);
+
+    source.start();
+    source.stop(now + duration);
+}
+
+function playTrack(index) {
+    const track = tracks[index];
+
+    if (track.type === "kick") {
+        playKick(track.volume);
+    }
+
+    if (track.type === "snare") {
+        playNoise(track.volume, .18, 900);
+    }
+
+    if (track.type === "hat") {
+        playNoise(track.volume, .055, 5000);
+    }
+
+    if (track.type === "bass") {
+        createOscillator(
+            55,
+            .24,
+            track.volume,
+            "sawtooth"
+        );
+    }
+
+    if (track.type === "synth") {
+        createOscillator(
+            261.63,
+            .2,
+            track.volume,
+            "square"
+        );
+    }
+}
+
+let isPlaying = false;
+let currentStep = 0;
+let timer;
+
+function intervalTime() {
+    const bpm =
+        Math.max(
+            40,
+            Math.min(
+                240,
+                Number(document.getElementById("bpm").value)
+            )
+        );
+
+    return (60 / bpm / 4) * 1000;
+}
+
+function playStep() {
+    document
+        .querySelectorAll(".step")
+        .forEach(step =>
+            step.classList.remove("playing")
+        );
+
+    document
+        .querySelectorAll(`[data-step="${currentStep}"]`)
+        .forEach(step =>
+            step.classList.add("playing")
+        );
+
+    tracks.forEach((track, trackIndex) => {
+        if (pattern[trackIndex][currentStep]) {
+            playTrack(trackIndex);
+        }
+    });
+
+    currentStep = (currentStep + 1) % 16;
+}
+
+function scheduleNext() {
+    if (!isPlaying) return;
+
+    playStep();
+
+    timer = setTimeout(
+        scheduleNext,
+        intervalTime()
+    );
+}
+
+document.getElementById("playBtn").onclick = () => {
+    setupMaster();
+
+    if (isPlaying) return;
+
+    isPlaying = true;
+    scheduleNext();
+};
+
+document.getElementById("stopBtn").onclick = () => {
+    isPlaying = false;
+    clearTimeout(timer);
+    currentStep = 0;
+
+    document
+        .querySelectorAll(".step")
+        .forEach(step =>
+            step.classList.remove("playing")
+        );
+};
+
+document.getElementById("clearBtn").onclick = () => {
+    pattern.forEach(row => row.fill(false));
+    buildSequencer();
+};
+
+document.getElementById("randomBtn").onclick = () => {
+    pattern.forEach((row, trackIndex) => {
+        row.forEach((_, step) => {
+            let chance = .2;
+
+            if (trackIndex === 0) chance = .28;
+            if (trackIndex === 2) chance = .55;
+
+            row[step] = Math.random() < chance;
+        });
+    });
+
+    buildSequencer();
+};
+
+/* PIANO */
+
+const notes = [
+    ["C4", 261.63, "white", 0],
+    ["C#4", 277.18, "black", 49],
+    ["D4", 293.66, "white", 0],
+    ["D#4", 311.13, "black", 119],
+    ["E4", 329.63, "white", 0],
+    ["F4", 349.23, "white", 0],
+    ["F#4", 369.99, "black", 259],
+    ["G4", 392.00, "white", 0],
+    ["G#4", 415.30, "black", 329],
+    ["A4", 440.00, "white", 0],
+    ["A#4", 466.16, "black", 399],
+    ["B4", 493.88, "white", 0],
+    ["C5", 523.25, "white", 0]
+];
+
+const keyboard = document.getElementById("keyboard");
+
+notes.forEach(note => {
+    const key = document.createElement("div");
+
+    key.className = `key ${note[2]}`;
+    key.dataset.note = note[0];
+
+    if (note[2] === "white") {
+        key.textContent = note[0];
+    } else {
+        key.style.left = `${note[3]}px`;
+    }
+
+    key.onmousedown = () => {
+        key.classList.add("pressed");
+
+        createOscillator(
+            note[1],
+            .5,
+            .35,
+            "sawtooth"
+        );
+    };
+
+    key.onmouseup = () => {
+        key.classList.remove("pressed");
+    };
+
+    key.onmouseleave = () => {
+        key.classList.remove("pressed");
+    };
+
+    keyboard.appendChild(key);
+});
+
+const computerKeys = {
+    a: 0,
+    w: 1,
+    s: 2,
+    e: 3,
+    d: 4,
+    f: 5,
+    t: 6,
+    g: 7,
+    y: 8,
+    h: 9,
+    u: 10,
+    j: 11,
+    k: 12
+};
+
+const heldKeys = new Set();
+
+document.addEventListener("keydown", event => {
+    if (heldKeys.has(event.key)) return;
+
+    const index =
+        computerKeys[event.key.toLowerCase()];
+
+    if (index === undefined) return;
+
+    heldKeys.add(event.key);
+
+    const note = notes[index];
+
+    createOscillator(
+        note[1],
+        .45,
+        .35,
+        "sawtooth"
+    );
+
+    const element =
+        document.querySelector(
+            `[data-note="${note[0]}"]`
+        );
+
+    element?.classList.add("pressed");
+});
+
+document.addEventListener("keyup", event => {
+    heldKeys.delete(event.key);
+
+    const index =
+        computerKeys[event.key.toLowerCase()];
+
+    if (index === undefined) return;
+
+    const note = notes[index];
+
+    document
+        .querySelector(`[data-note="${note[0]}"]`)
+        ?.classList.remove("pressed");
+});
+
+/* RECORDING */
+
+let recorder;
+let recordedChunks = [];
+let recording = false;
+
+document.getElementById("recordBtn").onclick = () => {
+    setupMaster();
+
+    const button =
+        document.getElementById("recordBtn");
+
+    if (!recording) {
+        recordedChunks = [];
+
+        recorder =
+            new MediaRecorder(master.destination.stream);
+
+        recorder.ondataavailable = e => {
+            if (e.data.size > 0) {
+                recordedChunks.push(e.data);
+            }
+        };
+
+        recorder.onstop = () => {
+            const blob = new Blob(
+                recordedChunks,
+                { type: "audio/webm" }
+            );
+
+            const url =
+                URL.createObjectURL(blob);
+
+            const link =
+                document.createElement("a");
+
+            link.href = url;
+            link.download = "janson-song.webm";
+            link.click();
+
+            setTimeout(
+                () => URL.revokeObjectURL(url),
+                1000
+            );
+        };
+
+        recorder.start();
+
+        recording = true;
+
+        button.textContent = "■ Finish Recording";
+        button.classList.add("recording");
+    } else {
+        recorder.stop();
+
+        recording = false;
+
+        button.textContent = "● Record";
+        button.classList.remove("recording");
+    }
+};
+
+buildSequencer();
+buildMixer();
+</script>
+
+</body>
+</html>
